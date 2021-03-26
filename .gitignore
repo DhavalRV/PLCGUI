@@ -1,0 +1,8 @@
+.vscode/
+__pycache__/
+build/
+dist/
+F13_Testing/
+F21_Testing/
+F24_Testing/
+F29_Testing/
