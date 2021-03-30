@@ -7,15 +7,17 @@ import multiprocessing
 import threading
 
 import numpy as np
+import json
 
 from pymodbus.client.sync import ModbusTcpClient
 from PyQt5 import QtCore, QtWidgets
 
 from Canvas import ChartCanvas
+from PLCAddresses import get_address
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, data, *args, **kwargs):
+    def __init__(self, data_io1, data_io2, data_io3, data_io4, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         self.setWindowTitle("PLC Timing Charts")
@@ -38,15 +40,29 @@ class MainWindow(QtWidgets.QMainWindow):
 
         # Need to adjust xdata
         self.canvas.io_1.xdata = [(i) for i in range(len(n_samples))]
-        self.canvas.io_1.ydata = [(0) for i in range(len(n_samples))]
+        self.canvas.io_2.xdata = [(i) for i in range(len(n_samples))]
+        self.canvas.io_3.xdata = [(i) for i in range(len(n_samples))]
+        self.canvas.io_4.xdata = [(i) for i in range(len(n_samples))]
+        # io_1_ydata = [(0) for i in range(len(n_samples))]
+        # io_1_ydata = [(0) for i in range(len(n_samples))]
         self.canvas.io_1.plot_ref = None
+        self.canvas.io_2.plot_ref = None
+        self.canvas.io_3.plot_ref = None
+        self.canvas.io_4.plot_ref = None
 
         self.showMaximized()
+        # update_plots(self, data)
+        # self.timer = QtCore.QTimer()
+        # self.timer.setInterval(1)
+        # self.timer.timeout.connect(update_plots(self, data))
         plot = threading.Thread(
             target=update_plots,
             args=(
                 self,
-                data,
+                data_io1,
+                data_io2,
+                data_io3,
+                data_io4,
             ),
             daemon=True,
         )
@@ -54,12 +70,9 @@ class MainWindow(QtWidgets.QMainWindow):
         # self.update_plots()
 
 
-def update_plots(self, data):
+def update_plots(self, data_io1, data_io2, data_io3, data_io4):
     while True:
-        self.canvas.io_1.response = data.recv()
-        self.canvas.io_1.ydata = self.canvas.io_1.ydata[1:] + [
-            self.canvas.io_1.response
-        ]
+        self.canvas.io_1.ydata = data_io1.recv()
         if self.canvas.io_1.plot_ref is None:
             self.canvas.io_1.plot_refs = self.canvas.io_1.plot(
                 self.canvas.io_1.xdata,
@@ -70,30 +83,107 @@ def update_plots(self, data):
             self.canvas.io_1.plot_ref = self.canvas.io_1.plot_refs[0]
         else:
             self.canvas.io_1.plot_ref.set_ydata(self.canvas.io_1.ydata)
-        self.canvas.draw()
+
+        self.canvas.io_2.ydata = data_io2.recv()
+        if self.canvas.io_2.plot_ref is None:
+            self.canvas.io_2.plot_refs = self.canvas.io_2.plot(
+                self.canvas.io_2.xdata,
+                self.canvas.io_2.ydata,
+                "r",
+                drawstyle="steps-mid",
+            )
+            self.canvas.io_2.plot_ref = self.canvas.io_2.plot_refs[0]
+        else:
+            self.canvas.io_2.plot_ref.set_ydata(self.canvas.io_2.ydata)
+
+        self.canvas.io_3.ydata = data_io3.recv()
+        if self.canvas.io_3.plot_ref is None:
+            self.canvas.io_3.plot_refs = self.canvas.io_3.plot(
+                self.canvas.io_3.xdata,
+                self.canvas.io_3.ydata,
+                "c",
+                drawstyle="steps-mid",
+            )
+            self.canvas.io_3.plot_ref = self.canvas.io_3.plot_refs[0]
+        else:
+            self.canvas.io_3.plot_ref.set_ydata(self.canvas.io_3.ydata)
+
+        self.canvas.io_4.ydata = data_io4.recv()
+        if self.canvas.io_4.plot_ref is None:
+            self.canvas.io_4.plot_refs = self.canvas.io_4.plot(
+                self.canvas.io_4.xdata,
+                self.canvas.io_4.ydata,
+                "m",
+                drawstyle="steps-mid",
+            )
+            self.canvas.io_4.plot_ref = self.canvas.io_4.plot_refs[0]
+        else:
+            self.canvas.io_4.plot_ref.set_ydata(self.canvas.io_4.ydata)
+
+        self.canvas.draw_idle()
 
 
-def acquire_signal(data):
-    while True:
-        start = time.time()
-        plc_client = ModbusTcpClient("10.24.0.2")
-        io_1_add = 0x400
-        io_1_response = int((plc_client.read_discrete_inputs(io_1_add)).bits[0] == True)
-        data.send(io_1_response)
+def acquire_signal(data_io1, data_io2, data_io3, data_io4):
+    n_samples = np.linspace(0, 249, 250)
+    io_1_ydata = [(0) for i in range(len(n_samples))]
+    io_2_ydata = [(0) for i in range(len(n_samples))]
+    io_3_ydata = [(0) for i in range(len(n_samples))]
+    io_4_ydata = [(0) for i in range(len(n_samples))]
+    try:
+        with open("./plc.json") as f:
+            plc = json.load(f)
+            ip = plc["ipAddress"]
+            io_1_add = get_address(plc["Ports"]["IOport1"])
+            io_2_add = get_address(plc["Ports"]["IOport2"])
+            io_3_add = get_address(plc["Ports"]["IOport3"])
+            io_4_add = get_address(plc["Ports"]["IOport4"])
+            plc_client = ModbusTcpClient(ip)
+        while True:
+            start = time.time()
+            io_1_response = int(
+                (plc_client.read_discrete_inputs(io_1_add)).bits[0] == True
+            )
+            io_2_response = int(
+                (plc_client.read_discrete_inputs(io_2_add)).bits[0] == True
+            )
+            io_3_response = int(
+                (plc_client.read_discrete_inputs(io_3_add)).bits[0] == True
+            )
+            io_4_response = int(
+                (plc_client.read_discrete_inputs(io_4_add)).bits[0] == True
+            )
 
-        elapsed_time = time.time() - start
-        # print(io_1_response)
+            io_1_ydata = io_1_ydata[1:] + [io_1_response]
+            io_2_ydata = io_2_ydata[1:] + [io_2_response]
+            io_3_ydata = io_3_ydata[1:] + [io_3_response]
+            io_4_ydata = io_4_ydata[1:] + [io_4_response]
+
+            data_io1.send(io_1_ydata)
+            data_io2.send(io_2_ydata)
+            data_io3.send(io_3_ydata)
+            data_io4.send(io_4_ydata)
+
+            elapsed_time = time.time() - start
+            print(elapsed_time)
+    except:
+        pass
 
 
 if __name__ == "__main__":
 
+    multiprocessing.freeze_support()
     app = QtWidgets.QApplication(sys.argv)
-    parent_data, child_data = multiprocessing.Pipe()
-    a = 1
-    w = MainWindow(child_data)
+    parent_io1, child_io1 = multiprocessing.Pipe()
+    parent_io2, child_io2 = multiprocessing.Pipe()
+    parent_io3, child_io3 = multiprocessing.Pipe()
+    parent_io4, child_io4 = multiprocessing.Pipe()
+    w = MainWindow(child_io1, child_io2, child_io3, child_io4)
 
     acquire = multiprocessing.Process(
-        target=acquire_signal, args=(parent_data,), daemon=True
+        name="Data Acquisition",
+        target=acquire_signal,
+        args=(parent_io1, parent_io2, parent_io3, parent_io4),
+        daemon=True,
     )
     acquire.start()
 

@@ -20,10 +20,25 @@ class ChartCanvas(FigureCanvasQTAgg):
 
         fig = Figure(figsize=(5, 9), dpi=100)
 
-        self.io_1 = fig.add_subplot(1, 1, 1)
+        self.io_1 = fig.add_subplot(411)
         self.io_1.set_ylim(-0.1, 1.1)
         self.io_1.set_yticks([0, 1])
-        self.io_1.set_ylabel("Xx", rotation="horizontal", ha="right")
+        self.io_1.set_ylabel("I/O 1", rotation="horizontal", ha="right")
+
+        self.io_2 = fig.add_subplot(412, sharex=self.io_1)
+        self.io_2.set_ylim(-0.1, 1.1)
+        self.io_2.set_yticks([0, 1])
+        self.io_2.set_ylabel("I/O 2", rotation="horizontal", ha="right")
+
+        self.io_3 = fig.add_subplot(413, sharex=self.io_1)
+        self.io_3.set_ylim(-0.1, 1.1)
+        self.io_3.set_yticks([0, 1])
+        self.io_3.set_ylabel("I/O 3", rotation="horizontal", ha="right")
+
+        self.io_4 = fig.add_subplot(414, sharex=self.io_1)
+        self.io_4.set_ylim(-0.1, 1.1)
+        self.io_4.set_yticks([0, 1])
+        self.io_4.set_ylabel("I/O 4", rotation="horizontal", ha="right")
 
         # for num in range(len(ports)):
         #     print(ports[num])
