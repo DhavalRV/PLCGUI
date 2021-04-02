@@ -1,10 +1,11 @@
 {
+    "Title":"F24 Line8",
     "ipAddress":"10.24.0.2",
     "Ports":{
         "IOport1":"X0",
         "IOport2":"X1",
-        "IOport3":"X2",
-        "IOport4":"X3"
+        "IOport3":"Y0",
+        "IOport4":"Y1"
         
     }
 }

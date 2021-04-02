@@ -13,7 +13,7 @@ from pymodbus.client.sync import ModbusTcpClient
 from PyQt5 import QtCore, QtWidgets
 
 from Canvas import ChartCanvas
-from PLCAddresses import get_address
+from PLCAddresses import get_bit
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -133,25 +133,43 @@ def acquire_signal(data_io1, data_io2, data_io3, data_io4):
         with open("./plc.json") as f:
             plc = json.load(f)
             ip = plc["ipAddress"]
-            io_1_add = get_address(plc["Ports"]["IOport1"])
-            io_2_add = get_address(plc["Ports"]["IOport2"])
-            io_3_add = get_address(plc["Ports"]["IOport3"])
-            io_4_add = get_address(plc["Ports"]["IOport4"])
+            io_1_type, io_1_bit = get_bit(plc["Ports"]["IOport1"])
+            io_2_type, io_2_bit = get_bit(plc["Ports"]["IOport2"])
+            io_3_type, io_3_bit = get_bit(plc["Ports"]["IOport3"])
+            io_4_type, io_4_bit = get_bit(plc["Ports"]["IOport4"])
             plc_client = ModbusTcpClient(ip)
         while True:
             start = time.time()
-            io_1_response = int(
-                (plc_client.read_discrete_inputs(io_1_add)).bits[0] == True
-            )
-            io_2_response = int(
-                (plc_client.read_discrete_inputs(io_2_add)).bits[0] == True
-            )
-            io_3_response = int(
-                (plc_client.read_discrete_inputs(io_3_add)).bits[0] == True
-            )
-            io_4_response = int(
-                (plc_client.read_discrete_inputs(io_4_add)).bits[0] == True
-            )
+            input_data = plc_client.read_discrete_inputs(1024, 32)
+            output_data = plc_client.read_discrete_inputs(1280, 32)
+
+            if io_1_type == "X":
+                io_1_response = int(input_data.bits[io_1_bit] == True)
+            elif io_1_type == "Y":
+                io_1_response = int(output_data.bits[io_1_bit] == True)
+            else:
+                io_1_response = -2
+
+            if io_2_type == "X":
+                io_2_response = int(input_data.bits[io_2_bit] == True)
+            elif io_2_type == "Y":
+                io_2_response = int(output_data.bits[io_2_bit] == True)
+            else:
+                io_2_response = -2
+
+            if io_3_type == "X":
+                io_3_response = int(input_data.bits[io_3_bit] == True)
+            elif io_3_type == "Y":
+                io_3_response = int(output_data.bits[io_3_bit] == True)
+            else:
+                io_3_response = -2
+
+            if io_4_type == "X":
+                io_4_response = int(input_data.bits[io_4_bit] == True)
+            elif io_4_type == "Y":
+                io_4_response = int(output_data.bits[io_4_bit] == True)
+            else:
+                io_4_response = -2
 
             io_1_ydata = io_1_ydata[1:] + [io_1_response]
             io_2_ydata = io_2_ydata[1:] + [io_2_response]
@@ -166,7 +184,7 @@ def acquire_signal(data_io1, data_io2, data_io3, data_io4):
             elapsed_time = time.time() - start
             print(elapsed_time)
     except:
-        pass
+        print("Please check PLC connection")
 
 
 if __name__ == "__main__":

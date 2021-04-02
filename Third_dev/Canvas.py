@@ -1,6 +1,7 @@
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+import json
 
 matplotlib.use("Qt5Agg")
 
@@ -20,63 +21,49 @@ class ChartCanvas(FigureCanvasQTAgg):
 
         fig = Figure(figsize=(5, 9), dpi=100)
 
+        with open("./plc.json") as f:
+            plc = json.load(f)
+            io_1 = plc["Ports"]["IOport1"]
+            io_2 = plc["Ports"]["IOport2"]
+            io_3 = plc["Ports"]["IOport3"]
+            io_4 = plc["Ports"]["IOport4"]
+            title = plc["Title"]
+
+        fig.suptitle(title)
+
         self.io_1 = fig.add_subplot(411)
         self.io_1.set_ylim(-0.1, 1.1)
         self.io_1.set_yticks([0, 1])
-        self.io_1.set_ylabel("I/O 1", rotation="horizontal", ha="right")
+        self.io_1.set_ylabel(io_1, rotation="horizontal", ha="right")
+        self.io_1.grid(color="white", linestyle="--", linewidth=0.5, axis="y")
+        self.io_1.set_facecolor("grey")
+        self.io_1.spines["bottom"].set_visible(False)
 
         self.io_2 = fig.add_subplot(412, sharex=self.io_1)
         self.io_2.set_ylim(-0.1, 1.1)
         self.io_2.set_yticks([0, 1])
-        self.io_2.set_ylabel("I/O 2", rotation="horizontal", ha="right")
+        self.io_2.set_ylabel(io_2, rotation="horizontal", ha="right")
+        self.io_2.grid(color="white", linestyle="--", linewidth=0.5, axis="y")
+        self.io_2.set_facecolor("grey")
+        self.io_2.spines["top"].set_visible(False)
+        self.io_2.spines["bottom"].set_visible(False)
 
         self.io_3 = fig.add_subplot(413, sharex=self.io_1)
         self.io_3.set_ylim(-0.1, 1.1)
         self.io_3.set_yticks([0, 1])
-        self.io_3.set_ylabel("I/O 3", rotation="horizontal", ha="right")
+        self.io_3.set_ylabel(io_3, rotation="horizontal", ha="right")
+        self.io_3.grid(color="white", linestyle="--", linewidth=0.5, axis="y")
+        self.io_3.set_facecolor("grey")
+        self.io_3.spines["top"].set_visible(False)
+        self.io_3.spines["bottom"].set_visible(False)
 
         self.io_4 = fig.add_subplot(414, sharex=self.io_1)
         self.io_4.set_ylim(-0.1, 1.1)
         self.io_4.set_yticks([0, 1])
-        self.io_4.set_ylabel("I/O 4", rotation="horizontal", ha="right")
-
-        # for num in range(len(ports)):
-        #     print(ports[num])
-        #     if num == 0:
-        #         pass
-
-        # self.num = fig.add_subplot(nums,1,num, sharex=self.)
-        # self.fkth_sensor = fig.add_subplot(411)
-        # self.fkth_purger = fig.add_subplot(412, sharex=self.fkth_sensor)
-        # self.tr_sensor = fig.add_subplot(413, sharex=self.fkth_sensor)
-        # self.tr_purger = fig.add_subplot(414, sharex=self.fkth_sensor)
-
-        # self.fkth_sensor.set_ylim(-0.1, 1.1)
-        # self.fkth_purger.set_ylim(-0.1, 1.1)
-        # self.tr_sensor.set_ylim(-0.1, 1.1)
-        # self.tr_purger.set_ylim(-0.1, 1.1)
-        # # self.fkth_sensor.axis("off")
-        # self.fkth_sensor.spines["bottom"].set_visible(False)
-        # self.fkth_purger.spines["top"].set_visible(False)
-        # self.fkth_sensor.spines["bottom"].set_visible(False)
-        # self.tr_sensor.spines["bottom"].set_visible(False)
-        # self.tr_sensor.spines["top"].set_visible(False)
-        # self.tr_purger.spines["top"].set_visible(False)
-
-        # self.fkth_sensor.get_xaxis().set_visible(False)
-        # self.fkth_purger.get_xaxis().set_visible(False)
-        # self.tr_sensor.get_xaxis().set_visible(False)
-        # self.tr_purger.get_xaxis().set_visible(False)
-
-        # self.fkth_sensor.set_yticks([0, 1])
-        # self.fkth_purger.set_yticks([0, 1])
-        # self.tr_sensor.set_yticks([0, 1])
-        # self.tr_purger.set_yticks([0, 1])
-
-        # self.fkth_sensor.set_ylabel("X0", rotation="horizontal", ha="right")
-        # self.fkth_purger.set_ylabel("X1", rotation="horizontal", ha="right")
-        # self.tr_sensor.set_ylabel("X2", rotation="horizontal", ha="right")
-        # self.tr_purger.set_ylabel("X3", rotation="horizontal", ha="right")
+        self.io_4.set_ylabel(io_4, rotation="horizontal", ha="right")
+        self.io_4.grid(color="white", linestyle="--", linewidth=0.5, axis="y")
+        self.io_4.set_facecolor("grey")
+        self.io_4.spines["top"].set_visible(False)
 
         fig.subplots_adjust(hspace=0)
         super(ChartCanvas, self).__init__(fig)

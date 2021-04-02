@@ -3,15 +3,15 @@ import time
 
 ip = "10.24.0.2"
 
-input_address = 0x401  # addressofinputX0
-output_address = 0x501
+input_address = 0x400  # addressofinputX0
+output_address = 0x500
 
 with ModbusTcpClient(ip) as client:
     # read_discrete_inputsusesfunctioncode=2
     while True:
-        response = client.read_discrete_inputs(input_address)  # readinputX0
+        response = client.read_discrete_inputs(1024, 16)  # readinputX0
         assert not response.isError()
-        print(response.bits[0])
+        print(response.bits)
 
     # i = 0
 
