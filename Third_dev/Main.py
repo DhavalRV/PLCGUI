@@ -120,75 +120,51 @@ def update_plots(self, data_io1, data_io2, data_io3, data_io4):
         self.canvas.draw_idle()
 
 
-# class io:
-#     def __init__(self):
-#         # ydata = None
-#         typ = None
-#         response = None
-#         bit = None
+class IO:
+    def __init__(self):
+        self.ydata = []
+        self.typ = None
+        self.response = None
+        self.bit = None
 
 
 def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
-    # io_1 = io()
-    # io_2 = io()
-    # io_3 = io()
-    # io_4 = io()
-    # io_1.ydata = 12
-    io_1_ydata = [(0) for i in range(len(n_samples))]
-    io_2_ydata = [(0) for i in range(len(n_samples))]
-    io_3_ydata = [(0) for i in range(len(n_samples))]
-    io_4_ydata = [(0) for i in range(len(n_samples))]
+    io_1 = IO()
+    io_2 = IO()
+    io_3 = IO()
+    io_4 = IO()
+    io_1.ydata = [(0) for i in range(len(n_samples))]
+    io_2.ydata = [(0) for i in range(len(n_samples))]
+    io_3.ydata = [(0) for i in range(len(n_samples))]
+    io_4.ydata = [(0) for i in range(len(n_samples))]
     try:
         with open("./plc.json") as f:
             plc = json.load(f)
             ip = plc["ipAddress"]
-            io_1_type, io_1_bit = get_bit(plc["Ports"]["IOport1"])
-            io_2_type, io_2_bit = get_bit(plc["Ports"]["IOport2"])
-            io_3_type, io_3_bit = get_bit(plc["Ports"]["IOport3"])
-            io_4_type, io_4_bit = get_bit(plc["Ports"]["IOport4"])
+            io_1.typ, io_1.bit = get_bit(plc["Ports"]["IOport1"])
+            io_2.typ, io_2.bit = get_bit(plc["Ports"]["IOport2"])
+            io_3.typ, io_3.bit = get_bit(plc["Ports"]["IOport3"])
+            io_4.typ, io_4.bit = get_bit(plc["Ports"]["IOport4"])
             plc_client = ModbusTcpClient(ip)
         while True:
             start = time.time()
             input_data = plc_client.read_discrete_inputs(1024, 32)
             output_data = plc_client.read_discrete_inputs(1280, 32)
 
-            if io_1_type == "X":
-                io_1_response = int(input_data.bits[io_1_bit] == True)
-            elif io_1_type == "Y":
-                io_1_response = int(output_data.bits[io_1_bit] == True)
-            else:
-                io_1_response = -2
+            for _io in [io_1, io_2, io_3, io_4]:
+                if _io.typ == "X":
+                    _io.response = int(input_data.bits[_io.bit] == True)
+                elif _io.typ == "Y":
+                    _io.response = int(output_data.bits[_io.bit] == True)
+                else:
+                    io_1.response = -2
 
-            if io_2_type == "X":
-                io_2_response = int(input_data.bits[io_2_bit] == True)
-            elif io_2_type == "Y":
-                io_2_response = int(output_data.bits[io_2_bit] == True)
-            else:
-                io_2_response = -2
+                _io.ydata = _io.ydata[1:] + [_io.response]
 
-            if io_3_type == "X":
-                io_3_response = int(input_data.bits[io_3_bit] == True)
-            elif io_3_type == "Y":
-                io_3_response = int(output_data.bits[io_3_bit] == True)
-            else:
-                io_3_response = -2
-
-            if io_4_type == "X":
-                io_4_response = int(input_data.bits[io_4_bit] == True)
-            elif io_4_type == "Y":
-                io_4_response = int(output_data.bits[io_4_bit] == True)
-            else:
-                io_4_response = -2
-
-            io_1_ydata = io_1_ydata[1:] + [io_1_response]
-            io_2_ydata = io_2_ydata[1:] + [io_2_response]
-            io_3_ydata = io_3_ydata[1:] + [io_3_response]
-            io_4_ydata = io_4_ydata[1:] + [io_4_response]
-
-            data_io1.send(io_1_ydata)
-            data_io2.send(io_2_ydata)
-            data_io3.send(io_3_ydata)
-            data_io4.send(io_4_ydata)
+            data_io1.send(io_1.ydata)
+            data_io2.send(io_2.ydata)
+            data_io3.send(io_3.ydata)
+            data_io4.send(io_4.ydata)
 
             elapsed_time = time.time() - start
             remaining_time = 0.04 - elapsed_time
@@ -202,7 +178,7 @@ def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
     except:
         # logger([3, 5564])
         print("Please check PLC connection")
-        # print(io_1.ydata)
+        # print(io_3.ydata)
 
 
 def logger(str):
