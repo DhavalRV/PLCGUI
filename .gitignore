@@ -2,6 +2,7 @@
 __pycache__/
 build/
 dist/
+Logs/
 F13_Testing/
 F21_Testing/
 F24_Testing/
