@@ -73,51 +73,71 @@ class MainWindow(QtWidgets.QMainWindow):
 
 def update_plots(self, data_io1, data_io2, data_io3, data_io4):
     while True:
+        start = time.time()
         self.canvas.io_1.ydata = data_io1.recv()
-        if self.canvas.io_1.plot_ref is None:
-            self.canvas.io_1.plot_refs = self.canvas.io_1.plot(
-                self.canvas.io_1.xdata,
-                self.canvas.io_1.ydata,
-                "b",
-                drawstyle="steps-mid",
-            )
-            self.canvas.io_1.plot_ref = self.canvas.io_1.plot_refs[0]
-        else:
-            self.canvas.io_1.plot_ref.set_ydata(self.canvas.io_1.ydata)
         self.canvas.io_2.ydata = data_io2.recv()
-        if self.canvas.io_2.plot_ref is None:
-            self.canvas.io_2.plot_refs = self.canvas.io_2.plot(
-                self.canvas.io_2.xdata,
-                self.canvas.io_2.ydata,
-                "r",
-                drawstyle="steps-mid",
-            )
-            self.canvas.io_2.plot_ref = self.canvas.io_2.plot_refs[0]
-        else:
-            self.canvas.io_2.plot_ref.set_ydata(self.canvas.io_2.ydata)
         self.canvas.io_3.ydata = data_io3.recv()
-        if self.canvas.io_3.plot_ref is None:
-            self.canvas.io_3.plot_refs = self.canvas.io_3.plot(
-                self.canvas.io_3.xdata,
-                self.canvas.io_3.ydata,
-                "c",
-                drawstyle="steps-mid",
-            )
-            self.canvas.io_3.plot_ref = self.canvas.io_3.plot_refs[0]
-        else:
-            self.canvas.io_3.plot_ref.set_ydata(self.canvas.io_3.ydata)
         self.canvas.io_4.ydata = data_io4.recv()
-        if self.canvas.io_4.plot_ref is None:
-            self.canvas.io_4.plot_refs = self.canvas.io_4.plot(
-                self.canvas.io_4.xdata,
-                self.canvas.io_4.ydata,
-                "m",
-                drawstyle="steps-mid",
-            )
-            self.canvas.io_4.plot_ref = self.canvas.io_4.plot_refs[0]
-        else:
-            self.canvas.io_4.plot_ref.set_ydata(self.canvas.io_4.ydata)
+
+        for _io_plot in [
+            self.canvas.io_1,
+            self.canvas.io_2,
+            self.canvas.io_3,
+            self.canvas.io_4,
+        ]:
+            if _io_plot.plot_ref is None:
+                _io_plot.plot_refs = _io_plot.plot(
+                    _io_plot.xdata, _io_plot.ydata, "m", drawstyle="steps-mid"
+                )
+                _io_plot.plot_ref = _io_plot.plot_refs[0]
+            else:
+                _io_plot.plot_ref.set_ydata(_io_plot.ydata)
+        # if self.canvas.io_1.plot_ref is None:
+        #     self.canvas.io_1.plot_refs = self.canvas.io_1.plot(
+        #         self.canvas.io_1.xdata,
+        #         self.canvas.io_1.ydata,
+        #         "b",
+        #         drawstyle="steps-mid",
+        #     )
+        #     self.canvas.io_1.plot_ref = self.canvas.io_1.plot_refs[0]
+        # else:
+        #     self.canvas.io_1.plot_ref.set_ydata(self.canvas.io_1.ydata)
+
+        # if self.canvas.io_2.plot_ref is None:
+        #     self.canvas.io_2.plot_refs = self.canvas.io_2.plot(
+        #         self.canvas.io_2.xdata,
+        #         self.canvas.io_2.ydata,
+        #         "r",
+        #         drawstyle="steps-mid",
+        #     )
+        #     self.canvas.io_2.plot_ref = self.canvas.io_2.plot_refs[0]
+        # else:
+        #     self.canvas.io_2.plot_ref.set_ydata(self.canvas.io_2.ydata)
+
+        # if self.canvas.io_3.plot_ref is None:
+        #     self.canvas.io_3.plot_refs = self.canvas.io_3.plot(
+        #         self.canvas.io_3.xdata,
+        #         self.canvas.io_3.ydata,
+        #         "c",
+        #         drawstyle="steps-mid",
+        #     )
+        #     self.canvas.io_3.plot_ref = self.canvas.io_3.plot_refs[0]
+        # else:
+        #     self.canvas.io_3.plot_ref.set_ydata(self.canvas.io_3.ydata)
+
+        # if self.canvas.io_4.plot_ref is None:
+        #     self.canvas.io_4.plot_refs = self.canvas.io_4.plot(
+        #         self.canvas.io_4.xdata,
+        #         self.canvas.io_4.ydata,
+        #         "m",
+        #         drawstyle="steps-mid",
+        #     )
+        #     self.canvas.io_4.plot_ref = self.canvas.io_4.plot_refs[0]
+        # else:
+        #     self.canvas.io_4.plot_ref.set_ydata(self.canvas.io_4.ydata)
         self.canvas.draw_idle()
+        elapsed_time = time.time() - start
+        print(elapsed_time)
 
 
 class IO:
@@ -133,10 +153,12 @@ def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
     io_2 = IO()
     io_3 = IO()
     io_4 = IO()
+
     io_1.ydata = [(0) for i in range(len(n_samples))]
     io_2.ydata = [(0) for i in range(len(n_samples))]
     io_3.ydata = [(0) for i in range(len(n_samples))]
     io_4.ydata = [(0) for i in range(len(n_samples))]
+
     try:
         with open("./plc.json") as f:
             plc = json.load(f)
@@ -171,27 +193,31 @@ def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
             if remaining_time > 0:
                 time.sleep(remaining_time)
             else:
-                msg = str(f"Current acquisition rate is: {elapsed_time}")
-                logger([datetime.datetime.now().strftime("%H%M%S%f"), msg])
                 print("Warning: Acquisition rate is above 50ms")
+            msg = str(f"Current acquisition rate is: {elapsed_time}seconds")
+            logger([datetime.datetime.now().strftime("%H:%M:%S.%f"), msg])
 
     except:
-        # logger([3, 5564])
-        print("Please check PLC connection")
-        # print(io_3.ydata)
+        msg = f"Unable to connect to PLC. Please confirm if PLC address is {ip}"
+        logger([datetime.datetime.now().strftime("%H:%M:%S.%f"), msg])
+        print(msg)
 
 
 def logger(str):
     folder = "Logs"
     today = datetime.datetime.now()
-
     filename = (today.strftime("%d%m%Y")) + ".csv"
+
     if not os.path.exists(folder):
         os.makedirs(folder)
-
-    with open(os.path.join(folder, filename), "a+", newline="") as file:
-        csv_writer = writer(file)
-        csv_writer.writerow(str)
+    if not os.path.isfile(os.path.join(folder, filename)):
+        with open(os.path.join(folder, filename), "a+", newline="") as file:
+            csv_writer = writer(file)
+            csv_writer.writerow(["Time", "Acqusition rate"])
+    else:
+        with open(os.path.join(folder, filename), "a+", newline="") as file:
+            csv_writer = writer(file)
+            csv_writer.writerow(str)
 
 
 if __name__ == "__main__":
