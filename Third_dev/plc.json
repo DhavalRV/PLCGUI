@@ -3,9 +3,9 @@
     "ipAddress":"10.24.0.2",
     "Ports":{
         "IOport1":"X0",
-        "IOport2":"X1",
-        "IOport3":"Y0",
-        "IOport4":"Y1"
+        "IOport2":"X0",
+        "IOport3":"X0",
+        "IOport4":"X0"
         
     }
 }

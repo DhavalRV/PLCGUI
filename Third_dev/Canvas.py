@@ -21,33 +21,52 @@ class ChartCanvas(FigureCanvasQTAgg):
 
         fig = Figure(figsize=(5, 9), dpi=100)
 
-        with open("./plc.json") as f:
-            plc = json.load(f)
-            title = plc["Title"]
-            io_1 = plc["Ports"]["IOport1"]
-            io_2 = plc["Ports"]["IOport2"]
-            io_3 = plc["Ports"]["IOport3"]
-            io_4 = plc["Ports"]["IOport4"]
-
-        fig.suptitle(title)
-
         self.io_1 = fig.add_subplot(411)
         self.io_2 = fig.add_subplot(412, sharex=self.io_1)
         self.io_3 = fig.add_subplot(413, sharex=self.io_1)
         self.io_4 = fig.add_subplot(414, sharex=self.io_1)
 
+        with open("./plc.json") as f:
+            plc = json.load(f)
+            title = plc["Title"]
+            self.io_1.name = plc["Ports"]["IOport1"]
+            self.io_2.name = plc["Ports"]["IOport2"]
+            self.io_3.name = plc["Ports"]["IOport3"]
+            self.io_4.name = plc["Ports"]["IOport4"]
+        self.io_1.color = "#00acc1"
+        self.io_2.color = "#ff5722"
+        self.io_3.color = "#43a047"
+        self.io_4.color = "#e040fb"
+
+        fig.suptitle(title, color="#FFFFFF")
+        fig.patch.set_facecolor("#1b1b1b")
+
         for _plot in [self.io_1, self.io_2, self.io_3, self.io_4]:
             _plot.set_ylim(-0.1, 1.1)
             _plot.set_yticks([0, 1])
-            _plot.grid(color="white", linestyle="--", linewidth=0.5, axis="y")
-            _plot.patch.set_facecolor("black")
-            _plot.patch.set_alpha(0.5)
+            _plot.grid(color="#FFFFFF", linestyle="--", linewidth=0.5, axis="y")
+            _plot.patch.set_facecolor("#424242")
             _plot.get_xaxis().set_visible(False)
+            _plot.tick_params(axis="x", colors="#FFFFFF")
+            _plot.tick_params(axis="y", colors="#FFFFFF")
+            _plot.set_ylabel(
+                _plot.name, color=_plot.color, rotation="horizontal", ha="right"
+            )
+            for _side in ["top", "left", "right", "bottom"]:
+                _plot.spines[_side].set_color("#FFFFFF")
 
-        self.io_1.set_ylabel(io_1, rotation="horizontal", ha="right")
-        self.io_2.set_ylabel(io_2, rotation="horizontal", ha="right")
-        self.io_3.set_ylabel(io_3, rotation="horizontal", ha="right")
-        self.io_4.set_ylabel(io_4, rotation="horizontal", ha="right")
+        # self.io_1.set_ylabel(
+        #     self.io_1.name, color=self.io_1.color, rotation="horizontal", ha="right"
+        # )
+        # self.io_2.set_ylabel(
+        #     io_2, color=self.io_2.color, rotation="horizontal", ha="right"
+        # )
+        # self.io_3.set_ylabel(
+        #     io_3, color=self.io_3.color, rotation="horizontal", ha="right"
+        # )
+        # self.io_4.set_ylabel(
+        #     io_4, color=self.io_4.color, rotation="horizontal", ha="right"
+        # )
 
         self.io_1.spines["bottom"].set_visible(False)
         self.io_2.spines["top"].set_visible(False)

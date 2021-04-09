@@ -26,6 +26,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         self.setWindowTitle("PLC Timing Charts")
+        self.setStyleSheet("background-color: #1b1b1b")
 
         self.main_widget = QtWidgets.QWidget(self)
         self.setCentralWidget(self.main_widget)
@@ -87,7 +88,10 @@ def update_plots(self, data_io1, data_io2, data_io3, data_io4):
         ]:
             if _io_plot.plot_ref is None:
                 _io_plot.plot_refs = _io_plot.plot(
-                    _io_plot.xdata, _io_plot.ydata, "m", drawstyle="steps-mid"
+                    _io_plot.xdata,
+                    _io_plot.ydata,
+                    _io_plot.color,
+                    drawstyle="steps-mid",
                 )
                 _io_plot.plot_ref = _io_plot.plot_refs[0]
             else:
@@ -137,7 +141,7 @@ def update_plots(self, data_io1, data_io2, data_io3, data_io4):
         #     self.canvas.io_4.plot_ref.set_ydata(self.canvas.io_4.ydata)
         self.canvas.draw_idle()
         elapsed_time = time.time() - start
-        print(elapsed_time)
+        # print(elapsed_time)
 
 
 class IO:
@@ -189,18 +193,18 @@ def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
             data_io4.send(io_4.ydata)
 
             elapsed_time = time.time() - start
-            remaining_time = 0.04 - elapsed_time
+            remaining_time = 0.05 - elapsed_time
             if remaining_time > 0:
                 time.sleep(remaining_time)
             else:
                 print("Warning: Acquisition rate is above 50ms")
             msg = str(f"Current acquisition rate is: {elapsed_time}seconds")
-            logger([datetime.datetime.now().strftime("%H:%M:%S.%f"), msg])
+            logger([datetime.datetime.now().strftime("%H:%M:%S.%f"), msg, None])
 
     except:
-        msg = f"Unable to connect to PLC. Please confirm if PLC address is {ip}"
-        logger([datetime.datetime.now().strftime("%H:%M:%S.%f"), msg])
-        print(msg)
+        reason = f"Unable to connect to PLC. Please confirm if PLC address is {ip}"
+        logger([datetime.datetime.now().strftime("%H:%M:%S.%f"), "inf", reason])
+        print(reason)
 
 
 def logger(str):
@@ -213,11 +217,10 @@ def logger(str):
     if not os.path.isfile(os.path.join(folder, filename)):
         with open(os.path.join(folder, filename), "a+", newline="") as file:
             csv_writer = writer(file)
-            csv_writer.writerow(["Time", "Acqusition rate"])
-    else:
-        with open(os.path.join(folder, filename), "a+", newline="") as file:
-            csv_writer = writer(file)
-            csv_writer.writerow(str)
+            csv_writer.writerow(["Time", "Acqusition rate", "Error"])
+    with open(os.path.join(folder, filename), "a+", newline="") as file:
+        csv_writer = writer(file)
+        csv_writer.writerow(str)
 
 
 if __name__ == "__main__":
