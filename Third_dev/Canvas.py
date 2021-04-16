@@ -1,6 +1,7 @@
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
+import os
 import json
 
 matplotlib.use("Qt5Agg")
@@ -19,12 +20,28 @@ class ChartCanvas(FigureCanvasQTAgg):
 
         """
 
-        fig = Figure(figsize=(5, 9), dpi=100)
+        fig = Figure(figsize=(19, 10), dpi=100)
 
         self.io_1 = fig.add_subplot(411)
         self.io_2 = fig.add_subplot(412, sharex=self.io_1)
         self.io_3 = fig.add_subplot(413, sharex=self.io_1)
         self.io_4 = fig.add_subplot(414, sharex=self.io_1)
+
+        if os.path.exists("./plc.json"):
+            pass
+        else:
+            data = {}
+            Ports = {}
+            data["Title"] = "Please Insert Title"
+            data["ipAddress"] = "10.255.0.2"
+            Ports["IOport1"] = "X0"
+            Ports["IOport2"] = "X0"
+            Ports["IOport3"] = "X0"
+            Ports["IOport4"] = "X0"
+            data["Ports"] = Ports
+
+            with open("./plc.json", "w") as f:
+                json.dump(data, f, indent=4)
 
         with open("./plc.json") as f:
             plc = json.load(f)
@@ -33,6 +50,7 @@ class ChartCanvas(FigureCanvasQTAgg):
             self.io_2.name = plc["Ports"]["IOport2"]
             self.io_3.name = plc["Ports"]["IOport3"]
             self.io_4.name = plc["Ports"]["IOport4"]
+
         self.io_1.color = "#00acc1"
         self.io_2.color = "#ff5722"
         self.io_3.color = "#43a047"
@@ -55,19 +73,6 @@ class ChartCanvas(FigureCanvasQTAgg):
             for _side in ["top", "left", "right", "bottom"]:
                 _plot.spines[_side].set_color("#FFFFFF")
 
-        # self.io_1.set_ylabel(
-        #     self.io_1.name, color=self.io_1.color, rotation="horizontal", ha="right"
-        # )
-        # self.io_2.set_ylabel(
-        #     io_2, color=self.io_2.color, rotation="horizontal", ha="right"
-        # )
-        # self.io_3.set_ylabel(
-        #     io_3, color=self.io_3.color, rotation="horizontal", ha="right"
-        # )
-        # self.io_4.set_ylabel(
-        #     io_4, color=self.io_4.color, rotation="horizontal", ha="right"
-        # )
-
         self.io_1.spines["bottom"].set_visible(False)
         self.io_2.spines["top"].set_visible(False)
         self.io_2.spines["bottom"].set_visible(False)
@@ -76,6 +81,7 @@ class ChartCanvas(FigureCanvasQTAgg):
         self.io_4.spines["top"].set_visible(False)
         self.io_4.get_xaxis().set_visible(True)
 
+        # fig.tight_layout()
         fig.subplots_adjust(hspace=0)
         super(ChartCanvas, self).__init__(fig)
 

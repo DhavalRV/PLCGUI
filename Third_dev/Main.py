@@ -17,6 +17,15 @@ from PyQt5 import QtCore, QtWidgets
 
 from Canvas import ChartCanvas
 from PLCAddresses import get_bit
+from Settings import SettingWindow
+
+
+class IO:
+    def __init__(self):
+        self.ydata = []
+        self.typ = None
+        self.response = None
+        self.bit = None
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -36,11 +45,15 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas = ChartCanvas(self)
 
         self.main_layout = QtWidgets.QGridLayout(self.main_widget)
-        self.main_layout.addWidget(self.canvas, *(0, 0))
-        # for _plot in :
-        #
-        # Need to automate init all charts with null value
-        #
+        self.main_layout.addWidget(self.canvas, 1, 0)
+
+        self.setting = SettingWindow(self)
+        self.btn = QtWidgets.QPushButton("Settings")
+        self.btn.setMinimumWidth(130)
+        self.btn.setStyleSheet("background-color: #424242;color:#ffffff")
+        self.main_layout.addWidget(self.btn, 0, 0, alignment=QtCore.Qt.AlignRight)
+        # self.btn.move(100, 100)
+        self.btn.clicked.connect(self.setting.SettingsDiag)
 
         # Need to adjust xdata
         self.canvas.io_1.xdata = [(i) for i in range(len(n_samples))]
@@ -53,10 +66,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas.io_4.plot_ref = None
 
         self.showMaximized()
-        # update_plots(self, data)
-        # self.timer = QtCore.QTimer()
-        # self.timer.setInterval(50)
-        # self.timer.timeout.connect(update_plots)
         plot = threading.Thread(
             target=update_plots,
             args=(
@@ -69,7 +78,6 @@ class MainWindow(QtWidgets.QMainWindow):
             daemon=True,
         )
         plot.start()
-        # self.update_plots()
 
 
 def update_plots(self, data_io1, data_io2, data_io3, data_io4):
@@ -96,60 +104,9 @@ def update_plots(self, data_io1, data_io2, data_io3, data_io4):
                 _io_plot.plot_ref = _io_plot.plot_refs[0]
             else:
                 _io_plot.plot_ref.set_ydata(_io_plot.ydata)
-        # if self.canvas.io_1.plot_ref is None:
-        #     self.canvas.io_1.plot_refs = self.canvas.io_1.plot(
-        #         self.canvas.io_1.xdata,
-        #         self.canvas.io_1.ydata,
-        #         "b",
-        #         drawstyle="steps-mid",
-        #     )
-        #     self.canvas.io_1.plot_ref = self.canvas.io_1.plot_refs[0]
-        # else:
-        #     self.canvas.io_1.plot_ref.set_ydata(self.canvas.io_1.ydata)
-
-        # if self.canvas.io_2.plot_ref is None:
-        #     self.canvas.io_2.plot_refs = self.canvas.io_2.plot(
-        #         self.canvas.io_2.xdata,
-        #         self.canvas.io_2.ydata,
-        #         "r",
-        #         drawstyle="steps-mid",
-        #     )
-        #     self.canvas.io_2.plot_ref = self.canvas.io_2.plot_refs[0]
-        # else:
-        #     self.canvas.io_2.plot_ref.set_ydata(self.canvas.io_2.ydata)
-
-        # if self.canvas.io_3.plot_ref is None:
-        #     self.canvas.io_3.plot_refs = self.canvas.io_3.plot(
-        #         self.canvas.io_3.xdata,
-        #         self.canvas.io_3.ydata,
-        #         "c",
-        #         drawstyle="steps-mid",
-        #     )
-        #     self.canvas.io_3.plot_ref = self.canvas.io_3.plot_refs[0]
-        # else:
-        #     self.canvas.io_3.plot_ref.set_ydata(self.canvas.io_3.ydata)
-
-        # if self.canvas.io_4.plot_ref is None:
-        #     self.canvas.io_4.plot_refs = self.canvas.io_4.plot(
-        #         self.canvas.io_4.xdata,
-        #         self.canvas.io_4.ydata,
-        #         "m",
-        #         drawstyle="steps-mid",
-        #     )
-        #     self.canvas.io_4.plot_ref = self.canvas.io_4.plot_refs[0]
-        # else:
-        #     self.canvas.io_4.plot_ref.set_ydata(self.canvas.io_4.ydata)
         self.canvas.draw_idle()
         elapsed_time = time.time() - start
         # print(elapsed_time)
-
-
-class IO:
-    def __init__(self):
-        self.ydata = []
-        self.typ = None
-        self.response = None
-        self.bit = None
 
 
 def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
