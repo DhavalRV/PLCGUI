@@ -46,17 +46,28 @@ class IOPort(QWidget):
 
         self.ioport_combo = QHBoxLayout(self)
         self.label = QLabel(name)
+        self.label.setMinimumSize(54, 20)
+
         self.io_spinbox = StringBox(strings=["X", "Y"])
         self.io_spinbox.setValue(self.io_spinbox.valueFromText(text=init_io))
+        self.io_spinbox.setMinimumSize(33, 20)
 
         self.port_spinbox = QSpinBox()
         self.port_spinbox.setDisplayIntegerBase(8)
         self.port_spinbox.setValue(init_port)
+        self.port_spinbox.setMinimumSize(43, 20)
 
         self.ioport_combo.addWidget(self.label)
         self.ioport_combo.addWidget(self.io_spinbox)
         self.ioport_combo.addWidget(self.port_spinbox)
         self.ioport_combo.setSpacing(0)
+
+        self.io_spinbox.setStyleSheet(
+            "background-color: #6d6d6d; outline-color:#ffffff"
+        )
+        self.port_spinbox.setStyleSheet(
+            "background-color: #6d6d6d; outline-color:#ffffff"
+        )
 
     def convert_to_octal(self, decimal_number):
         octalNum = 0
@@ -98,18 +109,18 @@ class SettingWindow(QWidget):
     def __init__(self, parent=None):
         super().__init__()
 
-    def initUI(self):
+    # def initUI(self):
 
-        # Add button
-        self.btn = QPushButton("Settings", self)
-        self.btn.move(30, 20)
-        self.btn.clicked.connect(self.SettingsDiag)
+    #     # Add button
+    #     self.btn = QPushButton("Settings", self)
+    #     self.btn.move(30, 20)
+    #     self.btn.clicked.connect(self.SettingsDiag)
 
-        # Add label
+    #     # Add label
 
-        self.setGeometry(300, 300, 290, 150)
-        self.setWindowTitle("Main Window")
-        self.show()
+    #     self.setGeometry(300, 300, 290, 150)
+    #     self.setWindowTitle("Main Window")
+    #     self.show()
 
     def SettingsDiag(self):
 
@@ -124,36 +135,52 @@ class SettingWindow(QWidget):
 
         self.dialog = QDialog()
         self.dialog.setWindowTitle("Settings")
-        self.dialog.resize(270, 200)
+        self.dialog.resize(310, 210)
 
         self.title_label = QLabel("Title :", self.dialog)
-        self.title_label.setGeometry(10, 10, 81, 20)
+        self.title_label.setGeometry(10, 10, 85, 20)
         self.ip_label = QLabel("PLC IP Address :", self.dialog)
-        self.ip_label.setGeometry(10, 40, 81, 20)
+        self.ip_label.setGeometry(10, 40, 85, 20)
 
         self.title_edit = QLineEdit(self.dialog)
-        self.title_edit.setGeometry(110, 10, 140, 20)
+        self.title_edit.setGeometry(110, 10, 190, 20)
         self.title_edit.setText(title)
+
         self.ip_edit = QLineEdit(self.dialog)
-        self.ip_edit.setGeometry(110, 40, 140, 20)
+        self.ip_edit.setGeometry(110, 40, 190, 20)
         self.ip_edit.setInputMask("000.000.000.000")
         self.ip_edit.setMaxLength(15)
         self.ip_edit.setText(ip)
 
-        self.port1_control = IOPort("Port 1 :", parent=self.dialog, init=io_1)
+        self.port1_control = IOPort("I/O Port 1 :", parent=self.dialog, init=io_1)
         self.port1_control.move(0, 80)
-        self.port2_control = IOPort("Port 2 :", parent=self.dialog, init=io_2)
-        self.port2_control.move(135, 80)
-        self.port3_control = IOPort("Port 3 :", parent=self.dialog, init=io_3)
-        self.port3_control.move(0, 115)
-        self.port4_control = IOPort("Port 4 :", parent=self.dialog, init=io_4)
-        self.port4_control.move(135, 115)
+        self.port2_control = IOPort("I/O Port 2 :", parent=self.dialog, init=io_2)
+        self.port2_control.move(160, 80)
+        self.port3_control = IOPort("I/O Port 3 :", parent=self.dialog, init=io_3)
+        self.port3_control.move(0, 120)
+        self.port4_control = IOPort("I/O Port 4 :", parent=self.dialog, init=io_4)
+        self.port4_control.move(160, 120)
 
-        self.btns = QDialogButtonBox(self.dialog)
-        self.btns.setStandardButtons(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.btns.rejected.connect(self.dialog.close)
-        self.btns.button(QDialogButtonBox.Ok).clicked.connect(self.restart_program)
-        self.btns.move(100, 160)
+        self.okbtn = QPushButton("Apply", self.dialog)
+        self.okbtn.setGeometry(140, 180, 75, 20)
+        self.closebtn = QPushButton("Cancel", self.dialog)
+        self.closebtn.setGeometry(225, 180, 75, 20)
+        # self.btns.setStandardButtons(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.closebtn.clicked.connect(self.dialog.close)
+        self.okbtn.clicked.connect(self.restart_program)
+        # self.btns.move(100, 160)
+
+        self.dialog.setStyleSheet(
+            "background-color: #1b1b1b; color:#ffffff; selection-background-color:#1b1b1b"
+        )
+        self.title_edit.setStyleSheet(
+            "background-color: #6d6d6d; outline-color:#ffffff"
+        )
+        self.ip_edit.setStyleSheet("background-color: #6d6d6d; outline-color:#ffffff")
+
+        self.okbtn.setStyleSheet("background-color: #424242; outline-color:#ffffff")
+        self.closebtn.setStyleSheet("background-color: #424242; outline-color:#ffffff")
+
         self.dialog.exec_()
 
     def restart_program(self):

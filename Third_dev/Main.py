@@ -1,5 +1,5 @@
-import math
-import random
+import pyautogui
+import cv2
 import sys
 import threading
 import time
@@ -18,6 +18,7 @@ from PyQt5 import QtCore, QtWidgets
 from Canvas import ChartCanvas
 from PLCAddresses import get_bit
 from Settings import SettingWindow
+from ScreenRecord import ScreenRecord
 
 
 class IO:
@@ -29,9 +30,7 @@ class IO:
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(
-        self, data_io1, data_io2, data_io3, data_io4, n_samples, *args, **kwargs
-    ):
+    def __init__(self, data_io1, data_io2, data_io3, data_io4, x_data, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         self.setWindowTitle("PLC Timing Charts")
@@ -45,25 +44,37 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas = ChartCanvas(self)
 
         self.main_layout = QtWidgets.QGridLayout(self.main_widget)
-        self.main_layout.addWidget(self.canvas, 1, 0)
+        self.main_layout.addWidget(self.canvas, 1, 0, 1, 3)
 
         self.setting = SettingWindow(self)
-        self.btn = QtWidgets.QPushButton("Settings")
-        self.btn.setMinimumWidth(130)
-        self.btn.setStyleSheet("background-color: #424242;color:#ffffff")
-        self.main_layout.addWidget(self.btn, 0, 0, alignment=QtCore.Qt.AlignRight)
+        self.settingbtn = QtWidgets.QPushButton("PLC Settings")
+        self.settingbtn.setMinimumWidth(130)
+        self.settingbtn.setStyleSheet("background-color: #424242; color:#ffffff")
+
+        self.btn_spacer = QtWidgets.QSpacerItem(
+            20, 40, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum
+        )
+        # self.record = ScreenRecord(self)
+        self.recbtn = QtWidgets.QPushButton("Record")
+        self.recbtn.setMinimumWidth(130)
+        self.recbtn.setCheckable(True)
+        self.recbtn.setStyleSheet("background-color: #424242;color:#ffffff")
+        self.main_layout.addWidget(self.settingbtn, 0, 2, 1, 1)
+        self.main_layout.addItem(self.btn_spacer, 0, 0, 1, 1)
+        self.main_layout.addWidget(self.recbtn, 0, 1, 1, 1)
         # self.btn.move(100, 100)
-        self.btn.clicked.connect(self.setting.SettingsDiag)
+        self.settingbtn.clicked.connect(self.setting.SettingsDiag)
+        self.recbtn.clicked.connect(self.button_screenRec)
 
         # Need to adjust xdata
-        self.canvas.io_1.xdata = [(i) for i in range(len(n_samples))]
-        self.canvas.io_2.xdata = [(i) for i in range(len(n_samples))]
-        self.canvas.io_3.xdata = [(i) for i in range(len(n_samples))]
-        self.canvas.io_4.xdata = [(i) for i in range(len(n_samples))]
-        self.canvas.io_1.plot_ref = None
-        self.canvas.io_2.plot_ref = None
-        self.canvas.io_3.plot_ref = None
-        self.canvas.io_4.plot_ref = None
+        for _plot in [
+            self.canvas.io_1,
+            self.canvas.io_2,
+            self.canvas.io_3,
+            self.canvas.io_4,
+        ]:
+            _plot.xdata = x_data
+            _plot.plot_ref = None
 
         self.showMaximized()
         plot = threading.Thread(
@@ -78,6 +89,20 @@ class MainWindow(QtWidgets.QMainWindow):
             daemon=True,
         )
         plot.start()
+
+    def button_screenRec(self):
+
+        start_rec = self.recbtn.isChecked()
+        stop_rec = multiprocessing.Value("i", 0)
+        rec = multiprocessing.Process(target=recorder, args=(stop_rec,), daemon=True)
+        if start_rec:
+            self.recbtn.setText("Recording..")
+            self.recbtn.setStyleSheet("color:#ff5252")
+            rec.start()
+        else:
+            self.recbtn.setText("Record")
+            self.recbtn.setStyleSheet("color:#ffffff")
+            stop_rec.value = 1
 
 
 def update_plots(self, data_io1, data_io2, data_io3, data_io4):
@@ -104,6 +129,7 @@ def update_plots(self, data_io1, data_io2, data_io3, data_io4):
                 _io_plot.plot_ref = _io_plot.plot_refs[0]
             else:
                 _io_plot.plot_ref.set_ydata(_io_plot.ydata)
+
         self.canvas.draw_idle()
         elapsed_time = time.time() - start
         # print(elapsed_time)
@@ -143,6 +169,7 @@ def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
                     io_1.response = -2
 
                 _io.ydata = _io.ydata[1:] + [_io.response]
+                _io.log_val = str(f"{_io.typ}{_io.bit}:{_io.response}")
 
             data_io1.send(io_1.ydata)
             data_io2.send(io_2.ydata)
@@ -151,17 +178,31 @@ def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
 
             elapsed_time = time.time() - start
             remaining_time = 0.05 - elapsed_time
+            err = "No error"
             if remaining_time > 0:
                 time.sleep(remaining_time)
             else:
-                print("Warning: Acquisition rate is above 50ms")
+                err = "Warning: Acquisition rate is above 50ms"
+                print(err)
             msg = str(f"Current acquisition rate is: {elapsed_time}seconds")
-            logger([datetime.datetime.now().strftime("%H:%M:%S.%f"), msg, None])
+            logger(
+                [
+                    datetime.datetime.now().strftime("%H:%M:%S.%f"),
+                    msg,
+                    err,
+                    io_1.log_val,
+                    io_2.log_val,
+                    io_3.log_val,
+                    io_4.log_val,
+                ]
+            )
 
     except:
-        reason = f"Unable to connect to PLC. Please confirm if PLC address is {ip}"
-        logger([datetime.datetime.now().strftime("%H:%M:%S.%f"), "inf", reason])
-        print(reason)
+        err = f"Unable to connect to PLC. Please confirm if PLC address is {ip}"
+        logger(
+            [datetime.datetime.now().strftime("%H:%M:%S.%f"), "inf", err, 0, 0, 0, 0]
+        )
+        print(err)
 
 
 def logger(str):
@@ -174,10 +215,43 @@ def logger(str):
     if not os.path.isfile(os.path.join(folder, filename)):
         with open(os.path.join(folder, filename), "a+", newline="") as file:
             csv_writer = writer(file)
-            csv_writer.writerow(["Time", "Acqusition rate", "Error"])
+            csv_writer.writerow(
+                [
+                    "Time",
+                    "Acqusition rate",
+                    "Error",
+                    "IO Port1",
+                    "IO Port2",
+                    "IO Port3",
+                    "IO Port4",
+                ]
+            )
     with open(os.path.join(folder, filename), "a+", newline="") as file:
         csv_writer = writer(file)
         csv_writer.writerow(str)
+
+
+def recorder(stop_rec):
+    folder = "Recordings"
+    today = datetime.datetime.now()
+    filename = (today.strftime("%Y_%m_%d %H%M%S")) + ".avi"
+    resolution = pyautogui.size()
+    codec = cv2.VideoWriter_fourcc(*"XVID")
+
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    filepath = os.path.join(folder, filename)
+
+    fps = 25
+    vid_writer = cv2.VideoWriter(filepath, codec, fps, resolution)
+    while True:
+        img = pyautogui.screenshot()
+        frame = np.array(img)
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        vid_writer.write(frame)
+        if stop_rec.value == 1:
+            break
+    vid_writer.release()
 
 
 if __name__ == "__main__":
@@ -188,9 +262,10 @@ if __name__ == "__main__":
     parent_io2, child_io2 = multiprocessing.Pipe()
     parent_io3, child_io3 = multiprocessing.Pipe()
     parent_io4, child_io4 = multiprocessing.Pipe()
-    n_samples = np.linspace(0, 299, 150)
+    n_samples = np.linspace(0, 299, 200)
+    x_data = [((len(n_samples) - i) * 0.05) for i in range(len(n_samples))]
 
-    w = MainWindow(child_io1, child_io2, child_io3, child_io4, n_samples)
+    w = MainWindow(child_io1, child_io2, child_io3, child_io4, x_data)
 
     acquire = multiprocessing.Process(
         name="Data Acquisition",

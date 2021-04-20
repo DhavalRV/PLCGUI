@@ -20,7 +20,7 @@ class ChartCanvas(FigureCanvasQTAgg):
 
         """
 
-        fig = Figure(figsize=(19, 10), dpi=100)
+        fig = Figure(figsize=(19, 10), dpi=100, constrained_layout=True)
 
         self.io_1 = fig.add_subplot(411)
         self.io_2 = fig.add_subplot(412, sharex=self.io_1)
@@ -62,6 +62,7 @@ class ChartCanvas(FigureCanvasQTAgg):
         for _plot in [self.io_1, self.io_2, self.io_3, self.io_4]:
             _plot.set_ylim(-0.1, 1.1)
             _plot.set_yticks([0, 1])
+            _plot.set_xlim(10, 0)
             _plot.grid(color="#FFFFFF", linestyle="--", linewidth=0.5, axis="y")
             _plot.patch.set_facecolor("#424242")
             _plot.get_xaxis().set_visible(False)
@@ -70,6 +71,7 @@ class ChartCanvas(FigureCanvasQTAgg):
             _plot.set_ylabel(
                 _plot.name, color=_plot.color, rotation="horizontal", ha="right"
             )
+
             for _side in ["top", "left", "right", "bottom"]:
                 _plot.spines[_side].set_color("#FFFFFF")
 
@@ -79,10 +81,13 @@ class ChartCanvas(FigureCanvasQTAgg):
         self.io_3.spines["top"].set_visible(False)
         self.io_3.spines["bottom"].set_visible(False)
         self.io_4.spines["top"].set_visible(False)
+
         self.io_4.get_xaxis().set_visible(True)
+        self.io_4.set_xlabel("Time (seconds)", color="#FFFFFF")
 
         # fig.tight_layout()
-        fig.subplots_adjust(hspace=0)
+        # fig.subplots_adjust(hspace=0)
+        fig.set_constrained_layout_pads(h_pad=0, hspace=0)
         super(ChartCanvas, self).__init__(fig)
 
 

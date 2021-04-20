@@ -3,8 +3,8 @@
     "ipAddress": "10.24.0.2",
     "Ports": {
         "IOport1": "X0",
-        "IOport2": "X1",
-        "IOport3": "X2",
+        "IOport2": "X2",
+        "IOport3": "X1",
         "IOport4": "X3"
     }
 }
