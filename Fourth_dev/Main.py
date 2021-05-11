@@ -18,6 +18,7 @@ from PyQt5 import QtCore, QtWidgets
 from Canvas import ChartCanvas
 from PLCAddresses import get_bit
 from Settings import SettingWindow
+from Count_Bar import Count_Bar
 
 
 class IO:
@@ -29,7 +30,7 @@ class IO:
 
 
 class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self, data_io1, data_io2, data_io3, data_io4, x_data, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(MainWindow, self).__init__(*args, **kwargs)
 
         self.setWindowTitle("PLC Timing Charts")
@@ -43,7 +44,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.canvas = ChartCanvas(self)
 
         self.main_layout = QtWidgets.QGridLayout(self.main_widget)
-        self.main_layout.addWidget(self.canvas, 1, 0, 1, 3)
 
         self.setting = SettingWindow(self)
         self.settingbtn = QtWidgets.QPushButton("PLC Settings")
@@ -58,13 +58,28 @@ class MainWindow(QtWidgets.QMainWindow):
         self.recbtn.setMinimumWidth(130)
         self.recbtn.setCheckable(True)
         self.recbtn.setStyleSheet("background-color: #424242;color:#ffffff")
+
+        self.horizontal_line = QtWidgets.QFrame()
+        self.horizontal_line.setFrameShape(QtWidgets.QFrame.HLine)
+        self.horizontal_line.setFrameShadow(QtWidgets.QFrame.Sunken)
+        self.horizontal_line.setLineWidth(2)
+
+        self.count_bar = Count_Bar(self)
+        self.count_bar.setStyleSheet("font-size:15pt")
+
+        self.main_layout.addWidget(self.canvas, 1, 0, 1, 3)
         self.main_layout.addWidget(self.settingbtn, 0, 2, 1, 1)
         self.main_layout.addItem(self.btn_spacer, 0, 0, 1, 1)
         self.main_layout.addWidget(self.recbtn, 0, 1, 1, 1)
+        self.main_layout.addWidget(self.horizontal_line, 2, 0, 1, 3)
+        self.main_layout.addWidget(self.count_bar, 3, 0, 1, 3)
         # self.btn.move(100, 100)
         self.settingbtn.clicked.connect(self.setting.SettingsDiag)
         self.recbtn.clicked.connect(self.button_screenRec)
 
+        self.show()
+
+    def main(self, data_io1, data_io2, data_io3, data_io4, x_data):
         # Need to adjust xdata
         for _plot in [
             self.canvas.io_1,
@@ -73,6 +88,8 @@ class MainWindow(QtWidgets.QMainWindow):
             self.canvas.io_4,
         ]:
             _plot.xdata = x_data
+            _plot.ydata = 0
+            _plot.count = 0
             _plot.plot_ref = None
 
         plot = threading.Thread(
@@ -86,8 +103,6 @@ class MainWindow(QtWidgets.QMainWindow):
             ),
             daemon=True,
         )
-
-        self.show()
         plot.start()
 
     def button_screenRec(self):
@@ -108,6 +123,7 @@ class MainWindow(QtWidgets.QMainWindow):
 def update_plots(self, data_io1, data_io2, data_io3, data_io4):
     while True:
         start = time.time()
+
         self.canvas.io_1.ydata = data_io1.recv()
         self.canvas.io_2.ydata = data_io2.recv()
         self.canvas.io_3.ydata = data_io3.recv()
@@ -119,6 +135,8 @@ def update_plots(self, data_io1, data_io2, data_io3, data_io4):
             self.canvas.io_3,
             self.canvas.io_4,
         ]:
+            if _io_plot.ydata[-2] < _io_plot.ydata[-1]:
+                _io_plot.count += 1
             if _io_plot.plot_ref is None:
                 _io_plot.plot_refs = _io_plot.plot(
                     _io_plot.xdata,
@@ -127,12 +145,18 @@ def update_plots(self, data_io1, data_io2, data_io3, data_io4):
                     drawstyle="steps-mid",
                 )
                 _io_plot.plot_ref = _io_plot.plot_refs[0]
-            else:
-                _io_plot.plot_ref.set_ydata(_io_plot.ydata)
+            _io_plot.plot_ref.set_ydata(_io_plot.ydata)
 
-        self.canvas.draw_idle()
+        self.count_bar.update_count(
+            self.canvas.io_1.count,
+            self.canvas.io_2.count,
+            self.canvas.io_3.count,
+            self.canvas.io_4.count,
+        )
+        self.canvas.draw()
+        self.canvas.flush_events()
         elapsed_time = time.time() - start
-        # print(elapsed_time)
+        # print(self.canvas.io_1.count)
 
 
 def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
@@ -158,13 +182,16 @@ def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
         while True:
             start = time.time()
             input_data = plc_client.read_discrete_inputs(1024, 32)
-            output_data = plc_client.read_discrete_inputs(1280, 32)
+            output_data = plc_client.read_coils(1280, 32)
+            memory_data = plc_client.read_coils(2048, 32)
 
             for _io in [io_1, io_2, io_3, io_4]:
                 if _io.typ == "X":
                     _io.response = int(input_data.bits[_io.bit] == True)
                 elif _io.typ == "Y":
                     _io.response = int(output_data.bits[_io.bit] == True)
+                elif _io.typ == "M":
+                    _io.response = int(memory_data.bits[_io.bit] == True)
                 else:
                     io_1.response = -2
 
@@ -177,13 +204,13 @@ def acquire_signal(data_io1, data_io2, data_io3, data_io4, n_samples):
             data_io4.send(io_4.ydata)
 
             elapsed_time = time.time() - start
-            remaining_time = 0.05 - elapsed_time
+            remaining_time = 0.03 - elapsed_time
             err = "No error"
             if remaining_time > 0:
                 time.sleep(remaining_time)
             else:
-                err = "Warning: Acquisition rate is above 50ms"
-                print(err)
+                err = "Warning: Acquisition rate is above 30ms"
+                # print(err)
             msg = str(f"Current acquisition rate is: {elapsed_time}seconds")
             logger(
                 [
@@ -265,7 +292,7 @@ if __name__ == "__main__":
     n_samples = np.linspace(0, 299, 200)
     x_data = [((len(n_samples) - i) * 0.05) for i in range(len(n_samples))]
 
-    w = MainWindow(child_io1, child_io2, child_io3, child_io4, x_data)
+    w = MainWindow()
 
     acquire = multiprocessing.Process(
         name="Data Acquisition",
@@ -274,5 +301,6 @@ if __name__ == "__main__":
         daemon=True,
     )
     acquire.start()
+    w.main(child_io1, child_io2, child_io3, child_io4, x_data)
 
     app.exec_()
