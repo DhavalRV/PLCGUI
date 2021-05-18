@@ -1,10 +1,10 @@
 {
-    "Title": "F24 Line8",
+    "Title": "Test Environment.",
     "ipAddress": "10.24.0.2",
     "Ports": {
         "IOport1": "X0",
         "IOport2": "Y1",
         "IOport3": "M2",
-        "IOport4": "X3"
+        "IOport4": "X0"
     }
 }

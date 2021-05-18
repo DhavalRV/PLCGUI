@@ -63,7 +63,7 @@ class ChartCanvas(FigureCanvasQTAgg):
         for _plot in [self.io_1, self.io_2, self.io_3, self.io_4]:
             _plot.set_ylim(-0.1, 1.1)
             _plot.set_yticks([0, 1])
-            _plot.set_xlim(10, 0)
+            _plot.set_xlim(0, 10)
             _plot.grid(color="#FFFFFF", linestyle="--", linewidth=0.5, axis="y")
             _plot.patch.set_facecolor("#424242")
             _plot.get_xaxis().set_visible(False)
