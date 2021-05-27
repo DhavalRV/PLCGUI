@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import (
+    QCheckBox,
     QDialog,
     QDialogButtonBox,
     QHBoxLayout,
@@ -56,6 +57,7 @@ class IOPort(QWidget):
         self.port_spinbox.setDisplayIntegerBase(8)
         self.port_spinbox.setValue(init_port)
         self.port_spinbox.setMinimumSize(43, 20)
+        self.port_spinbox.setMaximum(1750)
 
         self.ioport_combo.addWidget(self.label)
         self.ioport_combo.addWidget(self.io_spinbox)
@@ -132,10 +134,11 @@ class SettingWindow(QWidget):
             io_2 = plc["Ports"]["IOport2"]
             io_3 = plc["Ports"]["IOport3"]
             io_4 = plc["Ports"]["IOport4"]
+            clear = plc["clear_flags"]
 
         self.dialog = QDialog()
         self.dialog.setWindowTitle("Settings")
-        self.dialog.resize(310, 210)
+        self.dialog.resize(310, 230)
 
         self.title_label = QLabel("Title :", self.dialog)
         self.title_label.setGeometry(10, 10, 85, 20)
@@ -160,11 +163,16 @@ class SettingWindow(QWidget):
         self.port3_control.move(0, 120)
         self.port4_control = IOPort("I/O Port 4 :", parent=self.dialog, init=io_4)
         self.port4_control.move(160, 120)
+        self.clear_flags = QCheckBox(
+            "Check to reset memory states after trigger", self.dialog
+        )
+        self.clear_flags.setGeometry(10, 160, 300, 20)
+        self.clear_flags.setChecked(bool(clear))
 
         self.okbtn = QPushButton("Apply", self.dialog)
-        self.okbtn.setGeometry(140, 180, 75, 20)
+        self.okbtn.setGeometry(140, 200, 75, 20)
         self.closebtn = QPushButton("Cancel", self.dialog)
-        self.closebtn.setGeometry(225, 180, 75, 20)
+        self.closebtn.setGeometry(225, 200, 75, 20)
         # self.btns.setStandardButtons(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         self.closebtn.clicked.connect(self.dialog.close)
         self.okbtn.clicked.connect(self.restart_program)
@@ -197,6 +205,7 @@ class SettingWindow(QWidget):
         Ports["IOport3"] = self.port3_control.ret_value()
         Ports["IOport4"] = self.port4_control.ret_value()
         data["Ports"] = Ports
+        data["clear_flags"] = self.clear_flags.isChecked()
 
         with open("./plc.json", "w") as f:
             json.dump(data, f, indent=4)

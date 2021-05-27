@@ -84,6 +84,6 @@ def get_bit(port):
 
 
 if __name__ == "__main__":
-    io = "M1"
+    io = "M60"
     type, io = get_bit(io)
-    print(io)
+    print(int(io))

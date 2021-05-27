@@ -28,22 +28,6 @@ class ChartCanvas(FigureCanvasQTAgg):
         self.io_3 = fig.add_subplot(413, sharex=self.io_1)
         self.io_4 = fig.add_subplot(414, sharex=self.io_1)
 
-        if os.path.exists("./plc.json"):
-            pass
-        else:
-            data = {}
-            Ports = {}
-            data["Title"] = "Please Insert Title"
-            data["ipAddress"] = "10.255.0.2"
-            Ports["IOport1"] = "X0"
-            Ports["IOport2"] = "X0"
-            Ports["IOport3"] = "X0"
-            Ports["IOport4"] = "X0"
-            data["Ports"] = Ports
-
-            with open("./plc.json", "w") as f:
-                json.dump(data, f, indent=4)
-
         with open("./plc.json") as f:
             plc = json.load(f)
             title = plc["Title"]
@@ -63,7 +47,7 @@ class ChartCanvas(FigureCanvasQTAgg):
         for _plot in [self.io_1, self.io_2, self.io_3, self.io_4]:
             _plot.set_ylim(-0.1, 1.1)
             _plot.set_yticks([0, 1])
-            _plot.set_xlim(0, 10)
+            _plot.set_xlim(10, 0)
             _plot.grid(color="#FFFFFF", linestyle="--", linewidth=0.5, axis="y")
             _plot.patch.set_facecolor("#424242")
             _plot.get_xaxis().set_visible(False)

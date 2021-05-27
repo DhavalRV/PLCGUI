@@ -3,8 +3,9 @@
     "ipAddress": "10.24.0.2",
     "Ports": {
         "IOport1": "X0",
-        "IOport2": "Y1",
+        "IOport2": "M143",
         "IOport3": "M2",
         "IOport4": "X0"
-    }
+    },
+    "clear_flags": true
 }
